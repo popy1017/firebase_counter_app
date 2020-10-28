@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
@@ -117,6 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            _buildAccountInfo(),
             Text(
               'You have pushed the button this many times:',
             ),
@@ -133,6 +135,21 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  Widget _buildAccountInfo() {
+    final User _user = context.select((AuthModel _auth) => _auth.user);
+    return _user != null
+        ? Card(
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(_user.photoURL ?? ''),
+              ),
+              title: Text(_user.displayName),
+              subtitle: Text(_user.email),
+            ),
+          )
+        : Container();
   }
 
   Future<void> _logout() async {
