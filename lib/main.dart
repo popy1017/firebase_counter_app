@@ -23,12 +23,25 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        home: LoginForm(),
+        home: _LoginCheck(),
         builder: (BuildContext context, Widget child) {
           return FlutterEasyLoading(child: child);
         },
       ),
     );
+  }
+}
+
+class _LoginCheck extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final bool _loggedIn = context.watch<AuthModel>().loggedIn;
+
+    return _loggedIn
+        ? MyHomePage(
+            title: 'カウンター',
+          )
+        : LoginForm();
   }
 }
 
@@ -104,12 +117,5 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _logout() async {
     await context.read<AuthModel>().logout();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => LoginForm(),
-      ),
-      (route) => false,
-    );
   }
 }

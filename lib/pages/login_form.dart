@@ -65,15 +65,13 @@ class LoginForm extends StatelessWidget {
     );
   }
 
-  Future<void> _login(BuildContext context) async {
+  Future<bool> _login(BuildContext context) async {
+    bool loggedIn = false;
     EasyLoading.show(status: 'loading...');
     if (await context.read<AuthModel>().login()) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => MyHomePage(title: "カウンター")),
-        (_) => false,
-      );
+      loggedIn = true;
     }
     EasyLoading.dismiss();
+    return loggedIn;
   }
 }

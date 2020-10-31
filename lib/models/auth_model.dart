@@ -7,7 +7,17 @@ class AuthModel extends ChangeNotifier {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  AuthModel() {
+    final User _currentUser = _auth.currentUser;
+
+    if (_currentUser != null) {
+      _user = _currentUser;
+      notifyListeners();
+    }
+  }
+
   User get user => _user;
+  bool get loggedIn => _user != null;
 
   Future<bool> login() async {
     try {
@@ -24,6 +34,7 @@ class AuthModel extends ChangeNotifier {
   Future<void> logout() async {
     _user = null;
     await _auth.signOut();
+    await _signOutWithGoogle();
     notifyListeners();
   }
 
@@ -43,5 +54,9 @@ class AuthModel extends ChangeNotifier {
 
     // Once signed in, return the UserCredential
     return await FirebaseAuth.instance.signInWithCredential(credential);
+  }
+
+  Future<void> _signOutWithGoogle() async {
+    await GoogleSignIn().signOut();
   }
 }
