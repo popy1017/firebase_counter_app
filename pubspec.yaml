@@ -29,6 +29,7 @@ dependencies:
   # Firebase related
   firebase_core: ^0.5.0+1
   firebase_auth: ^0.18.1+2
+  firebase_crashlytics: ^0.2.2
   google_sign_in: ^4.5.5
 
   flutter_easyloading: ^2.0.0

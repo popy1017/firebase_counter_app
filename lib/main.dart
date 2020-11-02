@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,13 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebaseインスタンスの初期化
   await Firebase.initializeApp();
+
+  // FLutterのエラーをFirebase Crashlyticsに送るように設定
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+
   runApp(MyApp());
 }
 
