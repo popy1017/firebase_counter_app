@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_button/sign_button.dart';
 
 class AuthModel extends ChangeNotifier {
   User _user;
@@ -19,7 +21,15 @@ class AuthModel extends ChangeNotifier {
   User get user => _user;
   bool get loggedIn => _user != null;
 
-  Future<bool> login() async {
+  Future<bool> login(ButtonType type) async {
+    FirebaseCrashlytics.instance.log("Login: ${type.toString()}");
+
+    if (type != ButtonType.google) {
+      throw UnimplementedError(
+        'Unimplemented login button was tapped.: ${type.toString()}',
+      );
+    }
+
     try {
       UserCredential _userCredential = await _signInWithGoogle();
       _user = _userCredential.user;
@@ -32,6 +42,7 @@ class AuthModel extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    FirebaseCrashlytics.instance.log("Logout");
     _user = null;
     await _auth.signOut();
     await _signOutWithGoogle();
@@ -39,6 +50,8 @@ class AuthModel extends ChangeNotifier {
   }
 
   Future<UserCredential> _signInWithGoogle() async {
+    FirebaseCrashlytics.instance.log("Login with google");
+
     // Trigger the authentication flow
     final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
 
@@ -57,6 +70,7 @@ class AuthModel extends ChangeNotifier {
   }
 
   Future<void> _signOutWithGoogle() async {
+    FirebaseCrashlytics.instance.log("Logout with google");
     await GoogleSignIn().signOut();
   }
 }
