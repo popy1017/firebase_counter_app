@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -64,10 +65,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  CollectionReference _counters =
+      FirebaseFirestore.instance.collection('counters');
+
   void _incrementCounter() {
     setState(() {
       _counter++;
     });
+    updateCounter();
   }
 
   @override
@@ -90,10 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Text(
               'You have pushed the button this many times:',
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
+            _buildCounter(),
           ],
         ),
       ),
@@ -122,7 +124,74 @@ class _MyHomePageState extends State<MyHomePage> {
         : Container();
   }
 
+  Widget _buildCounter() {
+    return FutureBuilder<bool>(
+      future: fetchCounter(),
+      builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+        if (snapshot.hasError) {
+          print(snapshot.error);
+          return Text('エラーが発生しました。');
+        }
+
+        if (snapshot.hasData) {
+          return Text(
+            '$_counter',
+            style: Theme.of(context).textTheme.headline4,
+          );
+        }
+
+        return CircularProgressIndicator();
+      },
+    );
+  }
+
   Future<void> _logout() async {
     await context.read<AuthModel>().logout();
+  }
+
+  // Firestoreに保存してあるカウンターを取ってくる
+  // なかった場合は新たにDocumentを作る
+  Future<bool> fetchCounter() async {
+    try {
+      final String _userId = context.select((AuthModel auth) => auth.user.uid);
+
+      final DocumentSnapshot snapshot = await _counters.doc(_userId).get();
+      Map<String, dynamic> data = snapshot.data();
+
+      if (data == null) {
+        await createCounter();
+      } else {
+        final int count = data['count'];
+        setState(() {
+          _counter = count;
+        });
+      }
+    } catch (error) {
+      print(error);
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> createCounter() async {
+    final String _userId = context.read<AuthModel>().user.uid;
+    try {
+      await _counters.doc(_userId).set({'count': 0});
+    } catch (error) {
+      print(error);
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> updateCounter() async {
+    final String _userId = context.read<AuthModel>().user.uid;
+    try {
+      await _counters.doc(_userId).update({'count': _counter});
+    } catch (error) {
+      print(error);
+      return false;
+    }
+    return true;
   }
 }
