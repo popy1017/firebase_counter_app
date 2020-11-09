@@ -3,6 +3,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_button/sign_button.dart';
+import 'package:special_counter_app/helpers/firestore_helper.dart';
 
 class AuthModel extends ChangeNotifier {
   User _user;
@@ -32,6 +33,7 @@ class AuthModel extends ChangeNotifier {
 
     try {
       UserCredential _userCredential = await _signInWithGoogle();
+      await FirestoreHelper.instance.createCounter(_userCredential.user.uid);
       _user = _userCredential.user;
       notifyListeners();
       return true;

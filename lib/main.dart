@@ -4,6 +4,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
+import 'package:special_counter_app/helpers/firestore_helper.dart';
 import 'package:special_counter_app/models/auth_model.dart';
 import 'package:special_counter_app/pages/login_form.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -63,16 +64,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  int _currentCount = 0;
 
-  CollectionReference _counters =
-      FirebaseFirestore.instance.collection('counters');
+  FirestoreHelper _firestoreHelper = FirestoreHelper.instance;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-    updateCounter();
+  Future<void> _incrementCounter() async {
+    _currentCount++;
+
+    final String userId = context.read<AuthModel>().user.uid;
+    await _firestoreHelper.updateCounter(userId, _currentCount);
   }
 
   @override
@@ -80,7 +80,15 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        centerTitle: true,
         actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () => _firestoreHelper.updateCounter(
+              context.read<AuthModel>().user.uid,
+              0,
+            ),
+          ),
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: _logout,
@@ -125,17 +133,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildCounter() {
-    return FutureBuilder<bool>(
-      future: fetchCounter(),
-      builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+    final String userId = context.select((AuthModel auth) => auth.user?.uid);
+    return StreamBuilder<DocumentSnapshot>(
+      stream: _firestoreHelper.getStream(userId),
+      builder:
+          (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
         if (snapshot.hasError) {
           print(snapshot.error);
           return Text('エラーが発生しました。');
         }
 
         if (snapshot.hasData) {
+          final Map<String, dynamic> data = snapshot.data.data();
+
+          if (data != null && data['count'] != null) {
+            _currentCount = data['count'];
+          }
+
           return Text(
-            '$_counter',
+            '$_currentCount',
             style: Theme.of(context).textTheme.headline4,
           );
         }
@@ -147,51 +163,5 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _logout() async {
     await context.read<AuthModel>().logout();
-  }
-
-  // Firestoreに保存してあるカウンターを取ってくる
-  // なかった場合は新たにDocumentを作る
-  Future<bool> fetchCounter() async {
-    try {
-      final String _userId = context.select((AuthModel auth) => auth.user.uid);
-
-      final DocumentSnapshot snapshot = await _counters.doc(_userId).get();
-      Map<String, dynamic> data = snapshot.data();
-
-      if (data == null) {
-        await createCounter();
-      } else {
-        final int count = data['count'];
-        setState(() {
-          _counter = count;
-        });
-      }
-    } catch (error) {
-      print(error);
-      return false;
-    }
-    return true;
-  }
-
-  Future<bool> createCounter() async {
-    final String _userId = context.read<AuthModel>().user.uid;
-    try {
-      await _counters.doc(_userId).set({'count': 0});
-    } catch (error) {
-      print(error);
-      return false;
-    }
-    return true;
-  }
-
-  Future<bool> updateCounter() async {
-    final String _userId = context.read<AuthModel>().user.uid;
-    try {
-      await _counters.doc(_userId).update({'count': _counter});
-    } catch (error) {
-      print(error);
-      return false;
-    }
-    return true;
   }
 }
